@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Smart Course Recommender</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">📚</div>
+    <div>
+      <div class="logo-text">CourseNav AI</div>
+      <div class="logo-sub">Smart Recommendation Engine</div>
+    </div>
+  </div>
+  <div class="header-badges">
+    <span class="badge">AVL Tree</span>
+    <span class="badge">0/1 Knapsack DP</span>
+    <span class="badge">Min-Heap</span>
+    <span class="badge green" id="status-badge">● Ready</span>
+  </div>
+</div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Time Budget -->
+    <div class="s-section">
+      <div class="s-title">Study Budget</div>
+      <div class="s-card">
+        <div class="row-label">
+          <label>Available hours / week</label>
+          <span id="budget-display">20 hrs</span>
+        </div>
+        <input type="range" id="budget-slider" min="5" max="80" value="20" step="5" oninput="updateBudget(this.value)"/>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);font-family:var(--font-mono);margin-top:2px">
+          <span>5h</span><span>80h</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weights -->
+    <div class="s-section">
+      <div class="s-title">Scoring Weights (α β γ)</div>
+      <div class="s-card">
+        <div style="margin-bottom:12px">
+          <div class="row-label"><label>α Relevance</label><span id="w-rel-v">0.40</span></div>
+          <input type="range" id="w-rel" min="0" max="1" step="0.05" value="0.40" oninput="updateWeights()"/>
+        </div>
+        <div style="margin-bottom:12px">
+          <div class="row-label"><label>β Rating</label><span id="w-rat-v">0.35</span></div>
+          <input type="range" id="w-rat" min="0" max="1" step="0.05" value="0.35" oninput="updateWeights()"/>
+        </div>
+        <div>
+          <div class="row-label"><label>γ Difficulty Penalty</label><span id="w-dif-v">0.25</span></div>
+          <input type="range" id="w-dif" min="0" max="1" step="0.05" value="0.25" oninput="updateWeights()"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Course -->
+    <div class="s-section">
+      <div class="s-title">Add Course</div>
+      <div class="s-card">
+        <div class="form-full">
+          <label>Course Name</label>
+          <input type="text" id="add-name" placeholder="e.g. Deep Learning"/>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Duration (hrs)</label>
+            <input type="number" id="add-dur" min="1" max="100" value="10"/>
+          </div>
+          <div>
+            <label>Rating (0-5)</label>
+            <input type="number" id="add-rat" min="0" max="5" step="0.1" value="4.5"/>
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>Topic</label>
+            <select id="add-topic">
+              <option>DSA</option><option>ML/AI</option><option>Web Dev</option>
+              <option>Systems</option><option>Math</option><option>Cloud</option>
+              <option>Security</option><option>Mobile</option><option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label>Difficulty</label>
+            <select id="add-diff">
+              <option value="1">Beginner</option>
+              <option value="2">Easy</option>
+              <option value="3" selected>Medium</option>
+              <option value="4">Hard</option>
+              <option value="5">Expert</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-full">
+          <label>Relevance (0-10)</label>
+          <input type="number" id="add-rel" min="0" max="10" step="0.5" value="8.0"/>
+        </div>
+        <button class="btn btn-primary btn-full" onclick="addCourse()">+ Insert into AVL Tree</button>
+      </div>
+    </div>
+
+    <!-- Course List -->
+    <div class="s-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="s-title" style="margin:0">Course Database</div>
+        <span id="course-count" style="font-family:var(--font-mono);font-size:10px;color:var(--text3)">20 courses</span>
+      </div>
+      <div id="course-list"></div>
+    </div>
+
+  </div><!-- /sidebar -->
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('dashboard')">
+        <span class="tab-icon">🎯</span>Recommendations
+      </div>
+      <div class="tab" onclick="switchTab('avl')">
+        <span class="tab-icon">🌳</span>AVL Tree
+      </div>
+      <div class="tab" onclick="switchTab('dp')">
+        <span class="tab-icon">📊</span>DP Table
+      </div>
+      <div class="tab" onclick="switchTab('stats')">
+        <span class="tab-icon">📈</span>Analytics
+      </div>
+    </div>
+
+    <!-- DASHBOARD TAB -->
+    <div class="panel active" id="tab-dashboard">
+      <div class="panel-title">Optimal Recommendations</div>
+      <div class="panel-sub">0/1 Knapsack DP selects the mathematically optimal subset within your time budget</div>
+
+      <div class="complexity-bar">
+        <span class="cx-badge">AVL Insert: O(log n)</span>
+        <span class="cx-badge">Scoring: O(n)</span>
+        <span class="cx-badge">DP Knapsack: O(n·W)</span>
+        <span class="cx-badge">Min-Heap Top-K: O(n log k)</span>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+        <button class="btn btn-green" onclick="runRecommendation()">▶ Run Recommendation Engine</button>
+        <button class="btn btn-secondary" onclick="resetResults()">↺ Reset</button>
+      </div>
+
+      <div id="rec-output">
+        <div class="empty-state">
+          <div class="empty-icon">🤖</div>
+          <div class="empty-text">Click "Run Recommendation Engine" to compute optimal course selection using DP Knapsack</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AVL TREE TAB -->
+    <div class="panel" id="tab-avl">
+      <div class="panel-title">AVL Tree Visualizer</div>
+      <div class="panel-sub">Self-balancing BST sorted by course score — O(log n) insert, search, delete</div>
+
+      <div class="avl-controls">
+        <button class="btn btn-primary btn-sm" onclick="animateAVLBuild()">▶ Animate Build</button>
+        <button class="btn btn-secondary btn-sm" onclick="drawAVL()">↺ Redraw</button>
+        <button class="btn btn-secondary btn-sm" onclick="avlFitView()">⊞ Fit View</button>
+        <span id="avl-info" style="font-family:var(--font-mono);font-size:11px;color:var(--text2)"></span>
+      </div>
+
+      <div class="legend">
+        <div class="leg-item"><div class="leg-dot" style="background:var(--accent)"></div>High score (≥70)</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--blue)"></div>Mid score (50–70)</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--bg4);border:1px solid var(--border2)"></div>Lower score</div>
+        <div class="leg-item"><div class="leg-dot" style="background:var(--green)"></div>Selected by DP</div>
+      </div>
+
+      <div style="position:relative">
+        <svg id="avl-canvas" viewBox="0 0 900 480" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="node-popup" id="node-popup">
+          <div class="node-popup-row"><span class="np-key">Name</span><span class="np-val" id="np-name"></span></div>
+          <div class="node-popup-row"><span class="np-key">Score</span><span class="np-val" id="np-score"></span></div>
+          <div class="node-popup-row"><span class="np-key">Duration</span><span class="np-val" id="np-dur"></span></div>
+          <div class="node-popup-row"><span class="np-key">Rating</span><span class="np-val" id="np-rat"></span></div>
+          <div class="node-popup-row"><span class="np-key">Height</span><span class="np-val" id="np-ht"></span></div>
+          <div class="node-popup-row"><span class="np-key">Balance</span><span class="np-val" id="np-bal"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DP TABLE TAB -->
+    <div class="panel" id="tab-dp">
+      <div class="panel-title">DP Knapsack Visualizer</div>
+      <div class="panel-sub">Step through the 0/1 Knapsack matrix — each cell shows optimal score for first i courses with capacity w</div>
+
+      <div class="dp-controls">
+        <button class="btn btn-primary btn-sm" onclick="dpAutoPlay()">▶ Auto Play</button>
+        <button class="btn btn-secondary btn-sm" onclick="dpStepPrev()">← Prev</button>
+        <button class="btn btn-secondary btn-sm" onclick="dpStepNext()">Next →</button>
+        <button class="btn btn-secondary btn-sm" onclick="dpReset()">↺ Reset</button>
+        <button class="btn btn-secondary btn-sm" onclick="dpShowTraceback()">🔍 Traceback</button>
+        <div class="dp-step-info" id="dp-step-info">Press Run Recommendation first, then step through</div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div class="legend">
+          <div class="leg-item"><div class="leg-dot" style="background:rgba(124,109,255,0.4)"></div>Current computation</div>
+          <div class="leg-item"><div class="leg-dot" style="background:rgba(245,166,35,0.3)"></div>Active cell</div>
+          <div class="leg-item"><div class="leg-dot" style="background:rgba(48,217,138,0.3)"></div>Traceback path</div>
+        </div>
+      </div>
+
+      <div class="dp-container" id="dp-table-wrap">
+        <div class="empty-state" style="padding:40px">
+          <div class="empty-icon">📊</div>
+          <div class="empty-text">Run the recommendation engine first</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANALYTICS TAB -->
+    <div class="panel" id="tab-stats">
+      <div class="panel-title">System Analytics</div>
+      <div class="panel-sub">Real-time stats from AVL Tree, Heap, and DP engine</div>
+
+      <div class="stats-row" id="stats-row">
+        <div class="stat-card"><div class="stat-num" style="color:var(--accent)" id="s-total">20</div><div class="stat-lbl">Total Courses</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--green)" id="s-selected">—</div><div class="stat-lbl">DP Selected</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--amber)" id="s-hours">—</div><div class="stat-lbl">Hours Used</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--blue)" id="s-avl-h">—</div><div class="stat-lbl">AVL Height</div></div>
+      </div>
+
+      <!-- Charts Grid — fixed containers with explicit heights -->
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="sec-header"><h2>Score Distribution</h2><div class="sec-line"></div></div>
+          <div class="chart-wrap">
+            <canvas id="score-chart" role="img" aria-label="Score distribution bar chart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="sec-header"><h2>Topic Coverage</h2><div class="sec-line"></div></div>
+          <div class="chart-wrap">
+            <canvas id="topic-chart" role="img" aria-label="Topic distribution chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="sec-header" style="margin-top:8px"><h2>Complexity Analysis</h2><div class="sec-line"></div></div>
+      <div class="s-card" style="background:var(--bg2)">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;font-family:var(--font-mono)">
+          <thead><tr style="border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:8px 12px;color:var(--text2)">Operation</th>
+            <th style="text-align:left;padding:8px 12px;color:var(--text2)">Structure</th>
+            <th style="text-align:center;padding:8px 12px;color:var(--text2)">Time</th>
+            <th style="text-align:center;padding:8px 12px;color:var(--text2)">Space</th>
+          </tr></thead>
+          <tbody id="complexity-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
