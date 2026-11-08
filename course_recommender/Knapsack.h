@@ -50,6 +50,16 @@ private:
 inline KnapsackResult Knapsack::solve(const std::vector<Course>& courses, int W) {
     int n = (int)courses.size();
 
+    KnapsackResult result;
+    W = std::max(0, std::min(1000, W));
+    result.totalTime = 0;
+    result.totalScore = 0.0;
+    result.unusedTime = W;
+    if (n == 0 || W == 0) {
+        result.skipped = courses;
+        return result;
+    }
+
     // Find min score for scaling (all values must be positive for DP)
     double minScore = courses[0].score;
     for (const auto& c : courses) minScore = std::min(minScore, c.score);
@@ -58,7 +68,7 @@ inline KnapsackResult Knapsack::solve(const std::vector<Course>& courses, int W)
     std::vector<int> val(n), wt(n);
     for (int i = 0; i < n; i++) {
         val[i] = scaleScore(courses[i].score, minScore);
-        wt[i]  = courses[i].duration;
+        wt[i]  = courses[i].duration > 0 ? courses[i].duration : W + 1;
     }
 
     // ── DP Table  dp[i][w] = max value using first i items, capacity w ──
@@ -86,7 +96,6 @@ inline KnapsackResult Knapsack::solve(const std::vector<Course>& courses, int W)
     }
 
     // ── Build result ──────────────────────────────────────────────────
-    KnapsackResult result;
     result.totalTime  = 0;
     result.totalScore = 0.0;
 
@@ -105,13 +114,22 @@ inline KnapsackResult Knapsack::solve(const std::vector<Course>& courses, int W)
 
 inline void Knapsack::printDPTable(const std::vector<Course>& courses, int W) {
     int n = (int)courses.size();
+    W = std::max(0, std::min(1000, W));
+    if (n == 0) {
+        printf("\n[Knapsack] No courses available.\n");
+        return;
+    }
+    if (W == 0) {
+        printf("\n[Knapsack] Time budget is zero.\n");
+        return;
+    }
     double minScore = courses[0].score;
     for (const auto& c : courses) minScore = std::min(minScore, c.score);
 
     std::vector<int> val(n), wt(n);
     for (int i = 0; i < n; i++) {
         val[i] = scaleScore(courses[i].score, minScore);
-        wt[i]  = courses[i].duration;
+        wt[i]  = courses[i].duration > 0 ? courses[i].duration : W + 1;
     }
 
     std::vector<std::vector<int>> dp(n + 1, std::vector<int>(W + 1, 0));

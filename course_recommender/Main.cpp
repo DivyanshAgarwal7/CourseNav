@@ -20,6 +20,13 @@ static void clearInput() {
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
+static constexpr int MAX_STUDY_HOURS = 1000;
+static constexpr int MAX_COURSE_DURATION = 1000;
+
+static int clampStudyHours(int value) {
+    return std::max(1, std::min(MAX_STUDY_HOURS, value));
+}
+
 static void printSeparator(char c = '-', int n = 55) {
     for (int i = 0; i < n; i++) putchar(c);
     putchar('\n');
@@ -101,7 +108,11 @@ static Course inputCourse(int nextId) {
     std::getline(std::cin, c.category);
 
     printf("  Duration (hours) : ");
-    std::cin >> c.duration;
+    if (!(std::cin >> c.duration)) {
+        clearInput();
+        c.duration = 10;
+    }
+    c.duration = std::max(1, std::min(MAX_COURSE_DURATION, c.duration));
     printf("  Difficulty (1-5) : ");
     std::cin >> c.difficulty;
     c.difficulty = std::max(1, std::min(5, c.difficulty));
@@ -132,8 +143,11 @@ int main() {
     // ── 2. Get user time budget ───────────────
     int availableTime = 0;
     printf("\nEnter your available study time per week (hours): ");
-    std::cin >> availableTime;
-    if (availableTime <= 0) availableTime = 20;
+    if (!(std::cin >> availableTime)) {
+        clearInput();
+        availableTime = 20;
+    }
+    availableTime = clampStudyHours(availableTime);
 
     // ── 3. Score all courses ──────────────────
     Scorer scorer(availableTime);
@@ -167,6 +181,10 @@ int main() {
         switch (choice) {
 
         case 1: {
+            if (courses.empty()) {
+                printf("  No courses available. Add a course before running recommendations.\n");
+                break;
+            }
             // Get sorted courses from AVL tree
             std::vector<Course> sorted = tree.getSortedDesc();
 
@@ -253,7 +271,11 @@ int main() {
 
         case 8: {
             printf("  Enter new time budget (hours): ");
-            std::cin >> availableTime;
+            if (!(std::cin >> availableTime)) {
+                clearInput();
+                availableTime = 20;
+            }
+            availableTime = clampStudyHours(availableTime);
             Scorer newScorer(availableTime);
             newScorer.printWeights();
             // Recompute scores and rebuild tree

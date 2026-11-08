@@ -1,299 +1,252 @@
-# 🎓 CourseNav — Smart Online Course Recommender
+# CourseNav
 
-**An algorithm-driven course recommendation system that helps learners build optimal study plans within a limited weekly time budget.**
+CourseNav is an interactive course recommendation engine built as a Design and Analysis of Algorithms project. It helps learners choose the highest-value combination of courses within a weekly time budget and makes the underlying algorithms understandable through live visualizations.
 
-CourseNav is a **Design and Analysis of Algorithms (DAA)** project that combines efficient data structures, dynamic programming, and algorithmic optimization to recommend valuable online courses based on career relevance, user ratings, course difficulty, and available study hours.
+The application combines course scoring, an AVL index, 0/1 Knapsack dynamic programming, binary search, analytics, and responsive interaction design.
 
-The project features two implementations:
+## Features
 
-- **C++ CLI Engine:** A high-performance command-line application implementing the core algorithms.
-- **Vanilla JavaScript Web Visualizer:** An interactive dashboard that visualizes AVL Trees, Dynamic Programming tables, priority queues, and course analytics.
+- Personalized course scoring using relevance, rating, and difficulty weights.
+- Recommendation planning with 0/1 Knapsack optimization.
+- Interactive DP matrix with cell-by-cell execution, skip/include decisions, and traceback visualization.
+- AVL Tree visualization with balance explanation, parent-child edges, score ordering, and responsive inspection on small screens.
+- Binary Search visualization with low, mid, and high pointers.
+- Course search, quick-add controls, weekly budget controls, and scoring sliders.
+- Analytics for score distribution, topic coverage, route quality, and complexity.
+- Responsive layouts for desktop, tablet, and mobile screens.
+- Premium hero experience with lazy-loaded React Three Fiber visual effects.
+- Reduced-motion support for accessibility.
 
----
+## System Design
 
-## ✨ Key Features
+```text
+┌──────────────────────────────────────────────────────────────┐
+│                         React UI                             │
+│  Hero · Recommendations · AVL · DP · Binary Search · Stats   │
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+                               ▼
+┌──────────────────────────────────────────────────────────────┐
+│                    Application State                          │
+│ courses · budget · scoring weights · active tab · step state │
+└──────────────────────────────┬───────────────────────────────┘
+                               │
+                               ▼
+┌──────────────────────────────────────────────────────────────┐
+│                  Algorithm / Domain Layer                     │
+│ scoreCourse → getPlan → AVL index → DP execution → analytics │
+└───────────────┬──────────────────┬───────────────────────────┘
+                │                  │
+                ▼                  ▼
+       ┌────────────────┐  ┌────────────────────┐
+       │ Recommendation │  │ Visual explanations │
+       │ result + route │  │ matrix/tree/search  │
+       └────────────────┘  └────────────────────┘
 
-- **🎯 Dynamic Course Scoring:** Calculates a score for each course using career relevance, user ratings, and difficulty penalties.
-- **⏱️ Optimal Study Planning:** Uses the 0/1 Knapsack algorithm to select the highest-value combination of courses within a weekly time budget.
-- **⚡ Top-K Quick Wins:** Identifies the highest-scoring short-duration courses (5 hours or less) using a Min-Heap.
-- **🌳 Self-Balancing AVL Tree:** Supports efficient course insertion, deletion, and searching based on computed scores.
-- **📊 Interactive Algorithm Visualization:** Displays AVL Tree operations, step-by-step Knapsack DP table generation, and Chart.js analytics.
-- **🔍 Course Management:** Allows users to add, remove, search, and organize courses.
-- **💻 Dual Implementation:** Demonstrates the same core algorithmic concepts in C++ and JavaScript.
+Separate reference implementation:
+Main.cpp → CourseDB → Scorer → AVLTree / MinHeap / Knapsack
+```
 
-## 🧠 Algorithmic Architecture
+### Runtime flow
 
-### 1. AVL Tree — Self-Balancing Binary Search Tree
+1. The course catalogue is loaded into React state.
+2. User inputs update the weekly budget and scoring weights.
+3. `scoreCourse` calculates a score for every course.
+4. `getPlan` builds the dynamic-programming table and reconstructs the selected route.
+5. `buildAVL` creates the balanced score index used by the AVL visualization.
+6. Execution helpers produce explainable states for the DP and Binary Search visualizers.
+7. React renders the active workspace and analytics from the same computed model.
 
-**Implementation:** `Avltree.h` and `app.js`
+### Frontend architecture
 
-The AVL Tree serves as the primary data structure for organizing courses according to their computed scores.
+- `App.jsx` owns page composition, navigation, shared state, and algorithm visualizer views.
+- `algorithms.js` contains deterministic course scoring, planning, AVL construction, and search/DP step generation.
+- `components/KnapsackMatrix.jsx` renders the interactive matrix and traceback state.
+- `components/Hero3D.jsx` renders the interactive 3D hero network.
+- `styles.css` contains the responsive design system, dark theme, visual states, and reduced-motion rules.
+- GSAP and ScrollTrigger handle entrance, scroll, and section-transition animation.
+- The 3D hero is loaded with `React.lazy()` so Three.js/R3F is code-split into a separate chunk.
 
-**Why AVL Trees?**
+### C++ architecture
 
-A normal Binary Search Tree can become skewed, resulting in linear-time operations. An AVL Tree maintains height balance through rotations, ensuring efficient operations.
+The C++ CLI mirrors the algorithmic model independently:
 
-**Key operations:**
-- Insert a course.
-- Delete a course.
-- Search for a course.
-- Retrieve courses in descending score order using reverse in-order traversal.
+```text
+Main.cpp
+ ├── CourseDB.h   course model and default catalogue
+ ├── Scorer.h     score calculation
+ ├── Avltree.h    balanced score index
+ ├── MinHeap.h   top-K quick wins
+ └── Knapsack.h  0/1 DP selection and traceback
+```
 
-**Complexity:**
+## Algorithms
 
-| Operation | Time Complexity |
-|---|---|
-| Insertion | O(log n) |
-| Deletion | O(log n) |
+### Dynamic scoring
+
+Each course score combines career relevance, course rating, and a difficulty penalty. The weights are user-adjustable and the resulting scores feed the AVL tree, recommendation planner, and analytics.
+
+### AVL Tree
+
+The AVL tree stores courses by score and maintains a balance factor between `-1` and `+1`. When insertion makes a subtree too tall, the implementation restores balance with LL, RR, LR, or RL rotations.
+
+| Operation | Complexity |
+|---|---:|
+| Insert | O(log n) |
 | Search | O(log n) |
-| Sorted traversal | O(n) |
+| Delete | O(log n) |
+| In-order traversal | O(n) |
 
-The tree requires O(n) space to store n courses.
+### 0/1 Knapsack
 
-### 2. 0/1 Knapsack — Dynamic Programming
+For each course and available capacity, the DP table stores the best score possible using the first `i` courses:
 
-**Implementation:** `Knapsack.h` and `app.js`
+```text
+DP[i][w] = max(
+  DP[i - 1][w],
+  DP[i - 1][w - duration[i]] + score[i]
+)
+```
 
-The Knapsack algorithm powers CourseNav's optimal recommendation engine. It selects a subset of courses that maximizes the total recommendation score without exceeding the learner's available study hours.
+The visualizer shows the current cell, skipped option, included option, winning value, and final traceback path.
 
-**Problem formulation:**
+| Operation | Complexity |
+|---|---:|
+| Planning | O(n × W) |
+| Full DP table | O(n × W) |
 
-- **Capacity (W):** Maximum study hours available per week.
-- **Weight (wᵢ):** Duration of course i.
-- **Value (vᵢ):** Computed score of course i.
-- **Decision:** Select or skip each course.
+### Binary Search
 
-**DP recurrence:**
+The search visualizer operates on sorted course scores and shows how each comparison discards half of the remaining interval.
 
-For a course with duration \(w_i\) and score \(v_i\):
+### Min-Heap
 
-\[
-DP[i][c] =
-\begin{cases}
-DP[i-1][c], & w_i > c\\
-\max(DP[i-1][c],\,v_i+DP[i-1][c-w_i]), & w_i \leq c
-\end{cases}
-\]
+The bounded min-heap keeps the highest-scoring short courses without sorting the complete eligible catalogue.
 
-The algorithm considers both possibilities—excluding a course or including it if sufficient capacity remains—and chooses the better result.
+| Operation | Complexity |
+|---|---:|
+| Top-K quick wins | O(n log K) |
+| Heap storage | O(K) |
 
-**Why Dynamic Programming?**
-
-A greedy strategy based on score or score-per-hour may produce a suboptimal combination. The 0/1 Knapsack algorithm systematically evaluates feasible combinations to obtain the maximum total score.
-
-**Complexity:**
-- Time: O(n × W)
-- Space: O(n × W) for the full DP table.
-
-*Note: W represents the discretized study-time capacity, so the standard implementation assumes integer-valued course durations and capacity.*
-
-### 3. Min-Heap — Top-K Quick Wins
-
-**Implementation:** `MinHeap.h` and `app.js`
-
-The Min-Heap identifies the highest-scoring courses with a duration of five hours or less.
-
-Instead of sorting every eligible course, the algorithm maintains a heap of at most K courses.
-
-**How it works:**
-
-1. Filter courses with a duration of at most five hours.
-2. Insert eligible courses into a Min-Heap of size K.
-3. When the heap exceeds K elements, remove the lowest-scoring course.
-4. Return the remaining K highest-scoring eligible courses.
-
-**Complexity:**
-- Time: O(n log K) for the bounded-heap selection approach.
-- Auxiliary space: O(K).
-
-This is particularly useful when the dataset contains many courses but the learner only wants a small number of quick recommendations.
-
-### 4. Dynamic Course Scoring
-
-Each course receives a score based on three factors:
-
-- **Career relevance:** How closely the course aligns with the learner's career goals.
-- **User rating:** The course's rating or perceived quality.
-- **Difficulty penalty:** An adjustment reflecting the course's difficulty.
-
-The resulting score is used by the AVL Tree, Knapsack algorithm, and Quick Wins engine.
-
-*The precise scoring formula and weights depend on the implementation in `Scorer.h` and `app.js`.*
-
----
-
-## 📊 Complexity Analysis
-
-Let:
-- **n** = Number of courses
-- **W** = Weekly study-time capacity
-- **K** = Number of Quick Win courses requested
-
-| Operation | Algorithm / Data Structure | Time Complexity | Space Complexity |
-|---|---|---|---|
-| Insert course | AVL Tree | O(log n) | O(n) total storage |
-| Search course | AVL Tree | O(log n) | O(1) auxiliary |
-| Delete course | AVL Tree | O(log n) | O(1) auxiliary, excluding implementation-specific recursion |
-| Score all courses | Linear scan | O(n) | O(1) auxiliary |
-| Optimal selection | 0/1 Knapsack DP | O(nW) | O(nW) |
-| Top-K Quick Wins | Bounded Min-Heap | O(n log K) | O(K) |
-| Sorted traversal | Reverse in-order AVL traversal | O(n) | O(n) worst-case output/stack bound |
-
-The complexities describe standard implementations and exclude any additional storage used for returned result collections.
-
----
-
-## 🏗️ Project Structure
+## Project Structure
 
 ```text
 CourseNav/
-│
 ├── Frontend/
-│   ├── index.html       # Dashboard layout
-│   ├── styles.css       # UI styling
-│   └── app.js           # JavaScript algorithms and visualization
-│
-└── course_recommender/
-    ├── Main.cpp         # CLI entry point and menu loop
-    ├── CourseDB.h       # Course structure and mock dataset
-    ├── Scorer.h         # Course scoring logic
-    ├── Avltree.h        # AVL Tree implementation
-    ├── MinHeap.h        # Min-Heap implementation
-    └── Knapsack.h       # Knapsack DP and traceback
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── tailwind.config.js
+│   ├── vercel.json
+│   ├── public/
+│   │   └── _headers              # Netlify / Cloudflare security headers
+│   └── src/
+│       ├── App.jsx               # Main application and views
+│       ├── algorithms.js         # Recommendation algorithms
+│       ├── styles.css            # Responsive UI and animations
+│       └── components/
+│           ├── Hero3D.jsx        # Lazy-loaded 3D hero
+│           └── KnapsackMatrix.jsx
+├── course_recommender/
+│   ├── Main.cpp
+│   ├── CourseDB.h
+│   ├── Scorer.h
+│   ├── Avltree.h
+│   ├── MinHeap.h
+│   ├── Knapsack.h
+│   └── tests.cpp                 # C++ validation tests
+├── .gitignore
+└── Readme.md
 ```
 
----
-
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Technology | Purpose |
 |---|---|
-| C++ | Core algorithmic engine |
-| HTML5 | Frontend structure |
-| CSS3 | Dashboard styling |
-| Vanilla JavaScript | Interactive visualizer and algorithm implementations |
-| Chart.js | Course analytics and charts |
-| GCC / MinGW | Compiling the C++ application |
+| React | Component-based application UI |
+| Vite | Frontend development and production bundling |
+| Tailwind CSS | Utility CSS configuration |
+| GSAP + ScrollTrigger | Entrance and scroll-based animation |
+| Three.js + React Three Fiber | Interactive 3D hero network |
+| Lucide React | Interface icons |
+| C++17-compatible compiler | Reference CLI algorithm engine |
 
----
+## Getting Started
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-For the web visualizer:
-- A modern web browser.
-
-For the C++ CLI:
-- A C++ compiler supporting the required C++ standard, such as GCC or MinGW.
-- A terminal or command prompt.
-
-### 1. Clone the Repository
-
-```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-cd CourseNav
-```
-
-Replace the placeholder with your actual repository URL.
-
-### 2. Run the Web Visualizer
-
-1. Navigate to the `Frontend` directory.
-2. Open `index.html` in a modern web browser.
-3. Explore the course dashboard and interactive algorithm visualizations.
-
-```text
-CourseNav/
-└── Frontend/
-    └── index.html
-```
-
-The frontend does not require a build step or local server, provided its dependencies are available as configured in the project.
-
-### 3. Run the C++ CLI Engine
-
-Navigate to the C++ project directory:
-
-```bash
-cd course_recommender
-```
-
-Compile the program:
-
-```bash
-g++ Main.cpp -o CourseNav
-```
-
-Run it on Linux or macOS:
-
-```bash
-./CourseNav
-```
-
-On Windows Command Prompt or PowerShell:
+### Frontend
 
 ```powershell
+cd Frontend
+npm install
+npm run dev
+```
+
+Open the local URL printed by Vite. Create a production build with:
+
+```powershell
+npm run build
+```
+
+The generated production files are written to `Frontend/dist`.
+
+### C++ CLI
+
+From the repository root:
+
+```powershell
+cd course_recommender
+g++ -std=c++17 Main.cpp -o CourseNav.exe
 .\CourseNav.exe
 ```
 
-If your compiler requires a specific C++ standard, add the corresponding flag, for example `-std=c++17`.
+On Linux or macOS:
+
+```bash
+g++ -std=c++17 Main.cpp -o CourseNav
+./CourseNav
+```
+
+## Testing and Security
+
+The project validates C++ budgets and course durations, clamps extreme values, guards empty course lists before Knapsack execution, and safely escapes user-controlled values in the legacy renderer.
+
+Run the C++ regression tests with:
+
+```powershell
+cd course_recommender
+g++ -std=c++17 tests.cpp -o course_nav_tests.exe
+.\course_nav_tests.exe
+```
+
+The tests cover empty course datasets, negative budgets, invalid course durations, and extremely large budgets.
+
+Run the frontend dependency audit with:
+
+```powershell
+cd Frontend
+npm audit
+```
+
+Production security headers are configured in both `Frontend/public/_headers` and `Frontend/vercel.json`. They include CSP, HSTS, clickjacking protection, MIME sniffing protection, referrer policy, permissions policy, and cross-origin isolation controls.
+
+## Deployment
+
+- For Vercel, deploy with `Frontend` as the project root so `vercel.json` is applied.
+- For Netlify or Cloudflare Pages, deploy the Vite output from `Frontend/dist`; the copied `_headers` file provides the security headers.
+- The 3D hero is lazy-loaded and code-split from the main JavaScript bundle.
+
+## Design Principles
+
+- Recommendation first: every animation supports understanding the engine.
+- Explainable algorithms: intermediate states are visible instead of showing only final results.
+- Responsive by default: dense visualizations remain usable on phones and tablets.
+- Accessible motion: users who prefer reduced motion receive static transitions.
+- Defensive inputs: budgets, durations, empty data, and extreme values are handled safely.
+
+## License
+
+No license has been specified yet. Add an appropriate license before public distribution.
 
 ---
 
-## 🖥️ How CourseNav Works
-
-The recommendation workflow follows these steps:
-
-1. **Load courses:** Initialize the course database.
-2. **Calculate scores:** Evaluate each course using its scoring factors.
-3. **Organize courses:** Store courses in the AVL Tree for efficient management and retrieval.
-4. **Set a weekly budget:** Specify the maximum number of hours available for learning.
-5. **Optimize recommendations:** Apply 0/1 Knapsack DP to select the combination with the highest total score.
-6. **Find Quick Wins:** Use a bounded Min-Heap to identify high-scoring courses requiring five hours or less.
-7. **Visualize results:** Inspect the AVL Tree, DP table, and course analytics in the web dashboard.
-
----
-
-## 🎯 Project Objectives
-
-- Apply fundamental and advanced DAA concepts to a practical recommendation problem.
-- Demonstrate the use of self-balancing trees, heaps, and dynamic programming.
-- Compare efficient algorithmic approaches for searching, ranking, and optimization.
-- Visualize data structures and algorithm execution interactively.
-- Help learners allocate their limited study time more effectively.
-
-## 🔮 Future Enhancements
-
-- Personalized learning paths based on career goals and skill levels.
-- Course recommendations using prerequisite dependencies.
-- Persistent storage for user profiles and course progress.
-- Integration with real course catalogs and live ratings.
-- Adaptive scoring based on learner feedback.
-- Advanced analytics for tracking learning progress and completed courses.
-
-## 📚 DAA Concepts Demonstrated
-
-| Concept | Application |
-|---|---|
-| Self-balancing Binary Search Trees | AVL Tree |
-| Tree rotations and height balancing | Maintaining AVL invariants |
-| Dynamic Programming | 0/1 Knapsack |
-| Greedy versus optimal strategies | Comparing course selection methods |
-| Priority Queues and Heaps | Top-K Quick Wins |
-| Complexity analysis | Evaluating time and space efficiency |
-| Algorithm visualization | Interactive dashboard |
-
-## 👥 Contributors
-
-Developed as a **Design and Analysis of Algorithms (DAA) academic project**.
-
-Add the project contributors' names and GitHub profiles here.
-
-## 📄 License
-
-No license has been specified yet. If you intend to distribute or accept contributions to this project publicly, consider adding an appropriate open-source license.
-
----
-
-**CourseNav — Plan smarter. Learn efficiently. Make every study hour count.**
+**CourseNav — plan smarter, learn efficiently, and make every study hour count.**
