@@ -40,6 +40,10 @@ const TOPIC_COLORS = {
   "Other":   "#8b93b0",
 };
 
+function escapeHTML(value) {
+  return String(value).replace(/[&<>'\"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[ch]));
+}
+
 // ─────────────────────────────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────────────────────────────
@@ -238,8 +242,8 @@ function refreshCourseList() {
     div.innerHTML = `
       <div class="ci-dot" style="background:${col}"></div>
       <div class="ci-body">
-        <div class="ci-name">${c.name}</div>
-        <div class="ci-meta">${c.topic} · ${c.duration}h · ⭐${c.rating}</div>
+        <div class="ci-name">${escapeHTML(c.name)}</div>
+        <div class="ci-meta">${escapeHTML(c.topic)} · ${c.duration}h · ⭐${c.rating}</div>
       </div>
       <div class="ci-score">${c.score.toFixed(1)}</div>
       <button class="btn btn-danger btn-sm" onclick="deleteCourse(${c.id}, event)">×</button>
@@ -344,8 +348,8 @@ function renderDashboard(dp) {
       <div class="rec-card optimal fade-in" style="animation-delay:${i * 0.08}s">
         <div class="rc-rank" style="background:rgba(124,109,255,0.2);color:var(--accent2)">#${i + 1}</div>
         <div class="rc-tag" style="background:rgba(124,109,255,0.15);color:var(--accent2)">DP OPTIMAL</div>
-        <div class="rc-name">${c.name}</div>
-        <div class="rc-topic" style="color:${col}">● ${c.topic}</div>
+        <div class="rc-name">${escapeHTML(c.name)}</div>
+        <div class="rc-topic" style="color:${col}">● ${escapeHTML(c.topic)}</div>
         <div class="rc-stats">
           <div class="rc-stat"><div class="rc-stat-label">Score</div><div class="rc-stat-val" style="color:var(--accent2)">${c.score.toFixed(1)}</div></div>
           <div class="rc-stat"><div class="rc-stat-label">Duration</div><div class="rc-stat-val">${c.duration}h</div></div>
@@ -365,8 +369,8 @@ function renderDashboard(dp) {
       <div class="rec-card quick fade-in" style="animation-delay:${i * 0.08}s">
         <div class="rc-rank" style="background:rgba(48,217,138,0.15);color:var(--green)">#${i + 1}</div>
         <div class="rc-tag" style="background:rgba(48,217,138,0.12);color:var(--green)">QUICK WIN (&lt;6h)</div>
-        <div class="rc-name">${c.name}</div>
-        <div class="rc-topic" style="color:${col}">● ${c.topic}</div>
+        <div class="rc-name">${escapeHTML(c.name)}</div>
+        <div class="rc-topic" style="color:${col}">● ${escapeHTML(c.topic)}</div>
         <div class="rc-stats">
           <div class="rc-stat"><div class="rc-stat-label">Score</div><div class="rc-stat-val" style="color:var(--green)">${c.score.toFixed(1)}</div></div>
           <div class="rc-stat"><div class="rc-stat-label">Duration</div><div class="rc-stat-val">${c.duration}h</div></div>
@@ -383,8 +387,8 @@ function renderDashboard(dp) {
       <div class="rec-card hard fade-in" style="animation-delay:${i * 0.08}s">
         <div class="rc-rank" style="background:rgba(245,166,35,0.15);color:var(--amber)">#${i + 1}</div>
         <div class="rc-tag" style="background:rgba(245,166,35,0.12);color:var(--amber)">HARD &amp; IMPACTFUL</div>
-        <div class="rc-name">${c.name}</div>
-        <div class="rc-topic" style="color:${col}">● ${c.topic}</div>
+        <div class="rc-name">${escapeHTML(c.name)}</div>
+        <div class="rc-topic" style="color:${col}">● ${escapeHTML(c.topic)}</div>
         <div class="rc-stats">
           <div class="rc-stat"><div class="rc-stat-label">Score</div><div class="rc-stat-val" style="color:var(--amber)">${c.score.toFixed(1)}</div></div>
           <div class="rc-stat"><div class="rc-stat-label">Difficulty</div><div class="rc-stat-val" style="color:var(--red)">${['','★','★★','★★★','★★★★','★★★★★'][c.difficulty]}</div></div>
@@ -402,7 +406,7 @@ function renderDashboard(dp) {
         <div class="skip-item">
           <div class="ci-dot" style="background:var(--text3)"></div>
           <div style="flex:1">
-            <div style="font-weight:500">${c.name}</div>
+            <div style="font-weight:500">${escapeHTML(c.name)}</div>
             <div class="skip-reason">${reason}</div>
           </div>
           <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3)">${c.duration}h · ${c.score.toFixed(1)} pts</div>

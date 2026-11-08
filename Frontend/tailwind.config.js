@@ -1,0 +1,1 @@
+export default { content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'], theme: { extend: { colors: { ink:'#090a0d', paper:'#f1f0eb', acid:'#d9ff54', lilac:'#a69bff' }, fontFamily: { display:['Space Grotesk','sans-serif'], sans:['Inter','sans-serif'], mono:['IBM Plex Mono','monospace'] } } }, plugins: [] };
