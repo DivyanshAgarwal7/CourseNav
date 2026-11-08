@@ -1,8 +1,24 @@
 # CourseNav
 
+![CourseNav](https://img.shields.io/badge/CourseNav-Interactive%20Learning%20Engine-7c3aed?style=for-the-badge)
+![React](https://img.shields.io/badge/React-Vite-38bdf8?style=flat-square&logo=react&logoColor=white)
+![Algorithms](https://img.shields.io/badge/Algorithms-AVL%20%7C%20DP%20%7C%20Search-f59e0b?style=flat-square)
+
+> An explainable recommendation engine that turns limited study time into a high-value learning route.
+
+**Live demo:** [coursenav.vercel.app](https://coursenav.vercel.app/)
+
+**Repository:** [github.com/DivyanshAgarwal7/CourseNav](https://github.com/DivyanshAgarwal7/CourseNav)
+
 CourseNav is an interactive course recommendation engine built as a Design and Analysis of Algorithms project. It helps learners choose the highest-value combination of courses within a weekly time budget and makes the underlying algorithms understandable through live visualizations.
 
-The application combines course scoring, an AVL index, 0/1 Knapsack dynamic programming, binary search, analytics, and responsive interaction design.
+The application combines course scoring, an AVL index, 0/1 Knapsack dynamic programming, binary search, analytics, and responsive interaction design. It is designed to show not only the recommendation, but also the reasoning behind it.
+
+## Product Overview
+
+CourseNav models learning as an optimization problem. A learner provides a weekly time budget and adjusts scoring preferences. The engine scores the catalogue, indexes courses with an AVL tree, and uses 0/1 Knapsack to select the best feasible combination.
+
+The interface turns each algorithm into an interactive explanation: users can inspect tree relationships, step through matrix cells, compare skip/include decisions, follow the traceback path, and observe search pointers moving through sorted scores.
 
 ## Features
 
@@ -232,7 +248,7 @@ Production security headers are configured in both `Frontend/public/_headers` an
 ## Deployment
 
 - For Vercel, deploy with `Frontend` as the project root so `vercel.json` is applied.
-- For Netlify or Cloudflare Pages, deploy the Vite output from `Frontend/dist`; the copied `_headers` file provides the security headers.
+- For Netlify or Cloudflare Pages, use `Frontend` as the base directory and `dist` as the publish directory; the copied `_headers` file provides the security headers.
 - The 3D hero is lazy-loaded and code-split from the main JavaScript bundle.
 
 ## Design Principles
